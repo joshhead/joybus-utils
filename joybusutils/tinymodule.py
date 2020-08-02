@@ -5,6 +5,7 @@ from nmigen import Elaboratable, Shape, Signal, Module, ClockDomain
 from nmigen.sim.pysim import Simulator, Tick, Delay
 from tabulate import tabulate
 
+
 class TinyModule(Elaboratable):
     def __init__(self):
         self.counter = Signal(5)
