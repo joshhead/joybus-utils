@@ -10,6 +10,9 @@ class TinyModule(Elaboratable):
         self.counter = Signal(5)
         self.output = Signal()
 
+    def ports(self):
+        return [self.output]
+
     def elaborate(self, platform):
         m = Module()
         m.d.sync += self.counter.eq(self.counter + 1)
@@ -23,19 +26,20 @@ class TinyModule(Elaboratable):
 
 
 if __name__ == "__main__":
-    dut = TinyModule()
-    sim = Simulator(dut)
+    tinymodule = TinyModule()
+    sim = Simulator(tinymodule)
 
     sim_results = []
 
     def process():
         # Enough ticks for the counter to overflow
         for i in range(35):
-            sim_results.append([i, (yield dut.counter), (yield dut.output)])
+            sim_results.append([i, (yield tinymodule.counter), (yield tinymodule.output)])
             yield Tick()
     sim.add_sync_process(process)
-    # Not 100% sure how this works. Intent is a 16mhz clock.
-    sim.add_clock(1.6e7)
-    sim.run()
+    # 12mhz clock
+    sim.add_clock(1/1_200_000)
+    with sim.write_vcd("tinymodule_sim.vcd", "tinymodule_sim.gtkw", traces=tinymodule.ports()):
+        sim.run()
 
     print(tabulate(sim_results, headers=["Clock", "Counter", "Output"]))
