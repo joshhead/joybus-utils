@@ -4,7 +4,7 @@ from tinymodule import TinyModule
 from nmigen.test.utils import FHDLTestCase
 import unittest
 
-CLOCK_PERIOD = 1/1_200_000
+CLOCK_PERIOD = 1/12_000_000
 
 
 class TinyModuleTest(FHDLTestCase):

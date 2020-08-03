@@ -1,8 +1,8 @@
 # This is an example module to help me get started with nmigen
 # It should be a module that sets a signal high after 5 clock cycles.
 
-from nmigen import Elaboratable, Shape, Signal, Module, ClockDomain
-from nmigen.sim.pysim import Simulator, Tick, Delay
+from nmigen import Elaboratable, Signal, Module
+from nmigen.sim.pysim import Simulator, Tick
 from tabulate import tabulate
 
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
             yield Tick()
     sim.add_sync_process(process)
     # 12mhz clock
-    sim.add_clock(1/1_200_000)
+    sim.add_clock(1/12_000_000)
     with sim.write_vcd("tinymodule_sim.vcd", "tinymodule_sim.gtkw", traces=tinymodule.ports()):
         sim.run()
 
