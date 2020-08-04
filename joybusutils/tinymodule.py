@@ -19,10 +19,10 @@ class TinyModule(Elaboratable):
         m.d.sync += self.counter.eq(self.counter + 1)
         # Once high, output should stay high.
         with m.If(self.output == 1):
-            m.d.sync += self.output.eq(1)
+            m.d.comb += self.output.eq(1)
         # Otherwise, wait for 5 clock ticks
         with m.Elif(self.counter == 5):
-            m.d.sync += self.output.eq(1)
+            m.d.comb += self.output.eq(1)
         return m
 
 

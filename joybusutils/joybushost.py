@@ -17,10 +17,10 @@ class JoyBusHost(Elaboratable):
         m.d.sync += self.counter.eq(self.counter + 1)
         # Once high, output should stay high.
         with m.If(self.output == 0):
-            m.d.sync += self.output.eq(0)
+            m.d.comb += self.output.eq(0)
         # Otherwise, wait for 5 clock ticks
         with m.Elif(self.counter == 5):
-            m.d.sync += self.output.eq(0)
+            m.d.comb += self.output.eq(0)
         return m
 
 

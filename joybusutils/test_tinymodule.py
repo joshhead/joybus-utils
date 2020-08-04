@@ -21,7 +21,7 @@ class TinyModuleTest(FHDLTestCase):
 
     def test_output_toggles_after5_ticks(self):
         def process():
-            for _ in range(5):
+            for _ in range(4):
                 yield Tick()
                 self.assertEqual((yield self.tinymodule.output), 0)
             for _ in range(32):
