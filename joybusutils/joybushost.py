@@ -14,13 +14,27 @@ class JoyBusHost(Elaboratable):
 
     def elaborate(self, platform):
         m = Module()
-        m.d.sync += self.counter.eq(self.counter + 1)
-        # Once high, output should stay high.
-        with m.If(self.output == 0):
-            m.d.comb += self.output.eq(0)
-        # Otherwise, wait for 5 clock ticks
-        with m.Elif(self.counter == 5):
-            m.d.comb += self.output.eq(0)
+        with m.FSM():
+            with m.State("START"):
+                with m.If(self.counter == 10):
+                    m.d.sync += self.counter.eq(0)
+                    m.next = "0"
+                with m.Elif(self.counter > 5):
+                    m.d.comb += self.output.eq(1)
+                    m.d.sync += self.counter.eq(self.counter + 1)
+                with m.Else():
+                    m.d.comb += self.output.eq(0)
+                    m.d.sync += self.counter.eq(self.counter + 1)
+            with m.State("0"):
+                with m.If(self.counter == 48):
+                    m.d.sync += self.counter.eq(0)
+                    m.next = "START"
+                with m.Elif(self.counter > 36):
+                    m.d.comb += self.output.eq(1)
+                    m.d.sync += self.counter.eq(self.counter + 1)
+                with m.Else():
+                    m.d.comb += self.output.eq(0)
+                    m.d.sync += self.counter.eq(self.counter + 1)
         return m
 
 
