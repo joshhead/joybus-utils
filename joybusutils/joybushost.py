@@ -2,34 +2,55 @@ from nmigen import Elaboratable, Signal, Module
 from nmigen.sim.pysim import Simulator, Tick
 
 CLOCK_PERIOD = 1/12_000_000
-
+DATA_WIDTH = 2
 
 class JoyBusHost(Elaboratable):
     def __init__(self):
-        self.counter = Signal(10)
-        self.output = Signal(reset=1)
-        self.write = Signal()
+        self.counter = Signal(10) # For timing
+        self.data = Signal(DATA_WIDTH)
+        self.tx_index = Signal(DATA_WIDTH)
+        self.tx = Signal(reset=1) # Serialized output
+        self.data_in = Signal(DATA_WIDTH) # Data in, to serialize
+        self.write_enable = Signal() # Strobe high to latch data and send
+        self.busy = Signal() # High while transmitting
 
     def ports(self):
-        return [self.output, self.write]
+        return [self.tx, self.data_in, self.write_enable, self.busy]
 
     def elaborate(self, platform):
         m = Module()
         with m.FSM():
             with m.State("IDLE"):
-                m.d.comb += self.output.eq(1)
+                m.d.comb += self.busy.eq(0)
+                m.d.comb += self.tx.eq(1) # Idle high
                 m.d.sync += self.counter.eq(0)
-                with m.If(self.write == 1):
-                    m.next = "0"
-            with m.State("0"):
+                m.d.sync += self.data.eq(self.data_in)
+                m.d.sync += self.tx_index.eq(DATA_WIDTH - 1)
+                with m.If(self.write_enable == 1):
+                    m.next = "TX_0"
+            with m.State("TX_0"):
+                m.d.comb += self.busy.eq(1)
                 with m.If(self.counter == 48):
                     m.d.sync += self.counter.eq(0)
-                    m.next = "IDLE"
+                    m.d.sync += self.tx_index.eq(self.tx_index - 1)
+                    m.next = "TX_1"
                 with m.Elif(self.counter > 36):
-                    m.d.comb += self.output.eq(1)
+                    m.d.comb += self.tx.eq(1)
                     m.d.sync += self.counter.eq(self.counter + 1)
                 with m.Else():
-                    m.d.comb += self.output.eq(0)
+                    m.d.comb += self.tx.eq(0)
+                    m.d.sync += self.counter.eq(self.counter + 1)
+            with m.State("TX_1"):
+                m.d.comb += self.busy.eq(1)
+                with m.If(self.counter == 48):
+                    m.d.sync += self.counter.eq(0)
+                    m.d.sync += self.tx_index.eq(self.tx_index - 1)
+                    m.next = "IDLE"
+                with m.Elif(self.counter > 12):
+                    m.d.comb += self.tx.eq(1)
+                    m.d.sync += self.counter.eq(self.counter + 1)
+                with m.Else():
+                    m.d.comb += self.tx.eq(0)
                     m.d.sync += self.counter.eq(self.counter + 1)
         return m
 
@@ -43,9 +64,9 @@ if __name__ == "__main__":
     def process():
         for i in range(3000):
             if (i == 10):
-                yield joybushost.write.eq(1)
+                yield joybushost.write_enable.eq(1)
             elif (i == 11):
-                yield joybushost.write.eq(0)
+                yield joybushost.write_enable.eq(0)
             yield Tick()
     sim.add_sync_process(process)
     sim.add_clock(CLOCK_PERIOD)
