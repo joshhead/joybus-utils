@@ -8,7 +8,7 @@ class JoyBusHost(Elaboratable):
     def __init__(self):
         self.counter = Signal(10) # For timing
         self.data = Signal(DATA_WIDTH)
-        self.tx_bits_remaining = Signal(DATA_WIDTH)
+        self.tx_bit_counter = Signal(DATA_WIDTH)
         self.tx = Signal(reset=1) # Serialized output
         self.data_in = Signal(DATA_WIDTH) # Data in, to serialize
         self.write_enable = Signal() # Strobe high to latch data and send
@@ -25,7 +25,7 @@ class JoyBusHost(Elaboratable):
                 m.d.comb += self.tx.eq(1) # Idle high
                 m.d.sync += self.counter.eq(0)
                 m.d.sync += self.data.eq(self.data_in)
-                m.d.sync += self.tx_bits_remaining.eq(DATA_WIDTH - 1)
+                m.d.sync += self.tx_bit_counter.eq(0)
                 with m.If(self.write_enable == 1):
                     with m.If(self.data_in[0] == 0):
                         m.next = "TX_0"
@@ -35,10 +35,10 @@ class JoyBusHost(Elaboratable):
                 m.d.comb += self.busy.eq(1)
                 with m.If(self.counter == 48):
                     m.d.sync += self.counter.eq(0)
-                    m.d.sync += self.tx_bits_remaining.eq(self.tx_bits_remaining - 1)
+                    m.d.sync += self.tx_bit_counter.eq(self.tx_bit_counter + 1)
                     next_data = self.data.shift_right(1)
                     m.d.sync += self.data.eq(next_data)
-                    with m.If(self.tx_bits_remaining == 0):
+                    with m.If(self.tx_bit_counter == DATA_WIDTH - 1):
                         m.next = "IDLE"
                     with m.Elif(next_data[0] == 0):
                         m.next = "TX_0"
@@ -54,10 +54,10 @@ class JoyBusHost(Elaboratable):
                 m.d.comb += self.busy.eq(1)
                 with m.If(self.counter == 48):
                     m.d.sync += self.counter.eq(0)
-                    m.d.sync += self.tx_bits_remaining.eq(self.tx_bits_remaining - 1)
+                    m.d.sync += self.tx_bit_counter.eq(self.tx_bit_counter + 1)
                     next_data = self.data.shift_right(1)
                     m.d.sync += self.data.eq(next_data)
-                    with m.If(self.tx_bits_remaining == 0):
+                    with m.If(self.tx_bit_counter == DATA_WIDTH - 1):
                         m.next = "IDLE"
                     with m.Elif(next_data[0] == 0):
                         m.next = "TX_0"
